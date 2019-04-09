@@ -1,5 +1,5 @@
-<mat-card id="header">
-  <div fxLayout="row" fxLayoutAlign="space-around start">
+<mat-card id="header" [class.fixed]="small | async" >
+  <div fxLayout.gt-md="row" fxLayout.lt-lg="column" fxLayoutAlign.gt-md="space-around start" fxLayoutAlign.lt-lg="center center">
     <h1 id="header-text">RTK Sentences</h1>
     <mat-form-field appearance="outline">
       <mat-label>Search</mat-label>
@@ -11,10 +11,9 @@
       <mat-label>Kanji Results</mat-label>
       <input matInput color="primary" type="number" [ngModel]="resultLimit | async" (input)="resultLimit.next($event.target.value)" />
     </mat-form-field>
-    <div fxLayout="column" fxLayoutAlign="none">
       <mat-checkbox [ngModel]="showNoSentenceKanji | async" (ngModelChange)="showNoSentenceKanji.next($event)">Show Kanji with no sentences</mat-checkbox>
       <mat-checkbox [ngModel]="showFurigana | async" (ngModelChange)="showFurigana.next($event)">Show furigana</mat-checkbox>
-    </div>
+
   </div>
 </mat-card>
 
@@ -25,9 +24,9 @@
       <div class="kanji" [id]="row.kanji">{{row.kanji}}</div>
 
       <div *ngFor="let sentence of row.sentences">
-        <div class="sentences">
-          <span class="japanese" [innerHTML]="sentence.htmlsentence"></span>
-          <span class="english">{{sentence.english}}</span>
+        <div class="sentences" fxLayout="row" fxLayoutAlign="space-between center">
+          <div class="japanese" [innerHTML]="sentence.htmlsentence"></div>
+          <div class="english">{{sentence.english}}</div>
         </div>
       </div>
     </mat-card>

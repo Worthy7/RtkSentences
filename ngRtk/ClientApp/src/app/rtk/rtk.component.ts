@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Subject, combineLatest, BehaviorSubject, Observable } from 'rxjs';
 import { map, debounce, debounceTime } from 'rxjs/operators';
+import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 
 @Component({
   selector: 'app-rtk',
@@ -10,15 +11,17 @@ import { map, debounce, debounceTime } from 'rxjs/operators';
 })
 export class RtkComponent implements OnInit {
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient,
+    private breakpointObserver: BreakpointObserver) { }
 
   rtk = new BehaviorSubject<{ [id: number]: RTKSentence }>({});
   searchText = new BehaviorSubject<string>("");
+  small = new BehaviorSubject(false);
 
   showNoSentenceKanji = new BehaviorSubject<boolean>(false);
   showFurigana = new BehaviorSubject<boolean>(true);
   filteredSentences: Observable<Array<RTKSentence>>;
-  resultLimit = new BehaviorSubject<number>(10);
+  resultLimit = new BehaviorSubject<number>(100);
 
   ngOnInit() {
     // for speed first load in all 
@@ -76,6 +79,18 @@ export class RtkComponent implements OnInit {
           this.rtk.next(newrtk);
         });
 
+
+        
+        this.breakpointObserver.observe([
+          '(max-width: 1280px)'
+        ]).subscribe(result => {
+          if (result.matches) {
+            this.small.next(false);
+          } else {
+            // if necessary:
+            this.small.next(true);
+          }
+          });
 
       });
 
