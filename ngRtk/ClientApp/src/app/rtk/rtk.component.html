@@ -1,29 +1,32 @@
 <mat-card id="header">
-  <h1 id="header-text">Welcome</h1>
-  <mat-form-field appearance="outline">
-    <mat-label>Search</mat-label>
-    <input matInput color="primary" type="text" (input)="searchText.next($event.target.value)" />
-  </mat-form-field>
+  <div fxLayout="row" fxLayoutAlign="space-around start">
+    <h1 id="header-text">RTK Sentences</h1>
+    <mat-form-field appearance="outline">
+      <mat-label>Search</mat-label>
+      <input matInput color="primary" type="text" (input)="searchText.next($event.target.value)" />
+    </mat-form-field>
 
 
-  <mat-form-field appearance="outline">
-    <mat-label>Kanji Results</mat-label>
-    <input matInput color="primary" type="number" [ngModel]="resultLimit | async" (input)="resultLimit.next($event.target.value)" />
-  </mat-form-field>
-  
-    <mat-checkbox [ngModel]="showNoSentenceKanji | async" (ngModelChange)="showNoSentenceKanji.next($event)">Show Kanji with no sentences</mat-checkbox>
-  
+    <mat-form-field appearance="outline">
+      <mat-label>Kanji Results</mat-label>
+      <input matInput color="primary" type="number" [ngModel]="resultLimit | async" (input)="resultLimit.next($event.target.value)" />
+    </mat-form-field>
+    <div fxLayout="column" fxLayoutAlign="none">
+      <mat-checkbox [ngModel]="showNoSentenceKanji | async" (ngModelChange)="showNoSentenceKanji.next($event)">Show Kanji with no sentences</mat-checkbox>
+      <mat-checkbox [ngModel]="showFurigana | async" (ngModelChange)="showFurigana.next($event)">Show furigana</mat-checkbox>
+    </div>
+  </div>
 </mat-card>
 
 <div id="results">
   <div *ngFor="let row of (filteredSentences | async)">
     <mat-card class="result-card">
-      <div class="keyword"><small>{{row.keyword}}</small></div>
+      <div class="keyword"><small>{{row.number}} - {{row.keyword}}</small></div>
       <div class="kanji" [id]="row.kanji">{{row.kanji}}</div>
 
       <div *ngFor="let sentence of row.sentences">
-        <div>
-          <span class="japanese" [innerHTML]="render(sentence.sentence)"></span>
+        <div class="sentences">
+          <span class="japanese" [innerHTML]="sentence.htmlsentence"></span>
           <span class="english">{{sentence.english}}</span>
         </div>
       </div>

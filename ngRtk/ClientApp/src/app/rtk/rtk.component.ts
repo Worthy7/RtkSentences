@@ -16,6 +16,7 @@ export class RtkComponent implements OnInit {
   searchText = new BehaviorSubject<string>("");
 
   showNoSentenceKanji = new BehaviorSubject<boolean>(false);
+  showFurigana = new BehaviorSubject<boolean>(true);
   filteredSentences: Observable<Array<RTKSentence>>;
   resultLimit = new BehaviorSubject<number>(10);
 
@@ -83,32 +84,38 @@ export class RtkComponent implements OnInit {
       this.rtk,
       this.showNoSentenceKanji,
       this.searchText.pipe(debounceTime(500)),
-      this.resultLimit
+      this.resultLimit,
+      this.showFurigana
     ).pipe(
-      map(([s, v, st, resultLimit]) => {
+      map(([s, v, searchtext, resultLimit, showFurigana]) => {
+        searchtext = searchtext.toLowerCase();
+        var res: Array<RTKSentence> = JSON.parse(JSON.stringify(Object.values(s)));
 
-        var res = JSON.parse(JSON.stringify(Object.values(s)));
         if (!v) {
           res = res.filter(c => c.sentences.length > 0);
         }
-        if (st.length > 0) {
-          res.forEach(c => c.sentences = c.sentences.filter(b => b.sentence.indexOf(st) > -1 || b.english.indexOf(st) > -1));
+        if (searchtext.length > 0) {
+          //only show sentences with results
+          res.forEach(c => c.sentences = c.sentences.filter(b => b.sentence.indexOf(searchtext) > -1 || b.english.indexOf(searchtext) > -1));
           res = res.filter(c => c.sentences.length > 0);
         }
-        return res.slice(0, resultLimit);
+        res = res.slice(0, resultLimit);
+        res.forEach(r => r.sentences.forEach(s => s.htmlsentence = this.render(s.sentence, showFurigana)));
+        return res;
       }));
 
     this.showNoSentenceKanji.next(false);
+
   }
 
-  public render(input: string) {
+  public render(input: string, showFurigana: boolean) {
 
     var newsen = input;
 
     var minsenre = /[\s](.*?)\[(.*?)\]/g;
     var begsenre = /([^].*?)\[(.*?)\]/g;
-    newsen = newsen.replace(minsenre, (a, b, c) => { return "<ruby>" + b + "<rt>" + c + "</rt></ruby>"; });
-    newsen = newsen.replace(begsenre, (a, b, c) => { return "<ruby>" + b + "<rt>" + c + "</rt></ruby>"; });
+    newsen = newsen.replace(minsenre, (a, b, c) => { return "<ruby>" + b + "<rt>" + (showFurigana ? c : "") + "</rt></ruby>"; });
+    newsen = newsen.replace(begsenre, (a, b, c) => { return "<ruby>" + b + "<rt>" + (showFurigana ? c : "") + "</rt></ruby>"; });
     return newsen;
 
   }
@@ -132,6 +139,7 @@ export class CoreSentence {
   heisigMaxKanji: string;
   heisigMaxKeyword: string;
   heisigSort: number;
+  htmlsentence: string;
 }
 
 
