@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.489
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ngRtk", "ngRtk\ngRtk.csproj", "{3214E3FC-0CE5-4EDE-A5A2-F6EAB358DEAA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3214E3FC-0CE5-4EDE-A5A2-F6EAB358DEAA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3214E3FC-0CE5-4EDE-A5A2-F6EAB358DEAA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3214E3FC-0CE5-4EDE-A5A2-F6EAB358DEAA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3214E3FC-0CE5-4EDE-A5A2-F6EAB358DEAA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {726811F5-EA51-402A-B965-D2AD9829A166}
+	EndGlobalSection
+EndGlobal
