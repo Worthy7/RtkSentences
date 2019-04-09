@@ -1,10 +1,32 @@
-<h1> Welcome </h1>
+<mat-card id="header">
+  <h1 id="header-text">Welcome</h1>
+  <mat-form-field appearance="outline">
+    <mat-label>Search</mat-label>
+    <input matInput color="primary" type="text" (input)="searchText.next($event.target.value)" />
+  </mat-form-field>
 
-<div *ngFor="let row of organizedSentences">
-  <div class="kanji">{{row.kanji}}</div>
 
-  <div *ngFor="let sentence of row.sentences">
-    <div [innerHTML]="render(sentence.sentence)"></div>
+  <mat-form-field appearance="outline">
+    <mat-label>Kanji Results</mat-label>
+    <input matInput color="primary" type="number" [ngModel]="resultLimit | async" (input)="resultLimit.next($event.target.value)" />
+  </mat-form-field>
+  
+    <mat-checkbox [ngModel]="showNoSentenceKanji | async" (ngModelChange)="showNoSentenceKanji.next($event)">Show Kanji with no sentences</mat-checkbox>
+  
+</mat-card>
+
+<div id="results">
+  <div *ngFor="let row of (filteredSentences | async)">
+    <mat-card class="result-card">
+      <div class="keyword"><small>{{row.keyword}}</small></div>
+      <div class="kanji" [id]="row.kanji">{{row.kanji}}</div>
+
+      <div *ngFor="let sentence of row.sentences">
+        <div>
+          <span class="japanese" [innerHTML]="render(sentence.sentence)"></span>
+          <span class="english">{{sentence.english}}</span>
+        </div>
+      </div>
+    </mat-card>
   </div>
-
 </div>

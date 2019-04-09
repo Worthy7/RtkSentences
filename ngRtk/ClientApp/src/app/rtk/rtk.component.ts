@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Subject, combineLatest } from 'rxjs';
+import { Subject, combineLatest, BehaviorSubject, Observable } from 'rxjs';
+import { map, debounce, debounceTime } from 'rxjs/operators';
 
 @Component({
   selector: 'app-rtk',
@@ -11,83 +12,93 @@ export class RtkComponent implements OnInit {
 
   constructor(private http: HttpClient) { }
 
-  rtk: Array<RTK> = [];
+  rtk = new BehaviorSubject<{ [id: number]: RTKSentence }>({});
+  searchText = new BehaviorSubject<string>("");
 
-  sentences: Array<CoreSentence> = [];
-
-  organizedSentences: Array<RTKSentence> = [];
-
+  showNoSentenceKanji = new BehaviorSubject<boolean>(false);
+  filteredSentences: Observable<Array<RTKSentence>>;
+  resultLimit = new BehaviorSubject<number>(10);
 
   ngOnInit() {
+    // for speed first load in all 
+
 
     // load rtk data
-    var rtksub = this.http.get('assets/rtk.tsv', { responseType: 'text' });
-
-    // load sentences data
-    var sentencesub = this.http.get('assets/sentences.tsv', { responseType: 'text' });
-
-
-    combineLatest(rtksub, sentencesub).subscribe(([rtkdata, sentenceData]) => {
-      {
+    this.http.get('assets/rtk.tsv', { responseType: 'text' }).subscribe(
+      (rtkdata) => {
         console.log(rtkdata);
 
         var rows = rtkdata.split("\n");
-        var newrtk: Array<RTK> = []
+        var newrtk: { [id: number]: RTKSentence } = {}
 
         rows.forEach(srow => {
           var row = srow.split("\t");
-          newrtk.push({
+          var n = <RTKSentence>{
             kanji: row[0],
             keyword: row[1],
-            number: parseInt(row[2])
-          });
+            number: parseInt(row[2]),
+            sentences: []
+          };
+
+          newrtk[n.number] = n;
 
         })
-        this.rtk = newrtk;
-      }
 
-      {
-        console.log(sentenceData);
+        // load sentences data
+        this.http.get('assets/sentences.tsv', { responseType: 'text' }).subscribe((sentenceData) => {
 
-        var rows = sentenceData.split("\n");
-        var coreSentences: Array<CoreSentence> = []
 
-        rows.forEach(srow => {
-          var row = srow.split("\t");
-          coreSentences.push(<CoreSentence>{
-            coreIndex: parseInt(row[0]),
-            sentence: row[1],
-            english: row[2],
-            heisigMaxNumber: parseInt(row[3]),
-            heisigMaxKanji: row[4],
-            heisigMaxKeyword: row[5],
-            heisigSort: parseInt(row[6])
+          console.log(sentenceData);
+
+          var rows = sentenceData.split("\n");
+
+          rows.forEach(srow => {
+            var row = srow.split("\t");
+            var ncs = <CoreSentence>{
+              coreIndex: parseInt(row[0]),
+              sentence: row[1],
+              english: row[2],
+              heisigMaxNumber: parseInt(row[3]),
+              heisigMaxKanji: row[4],
+              heisigMaxKeyword: row[5],
+              heisigSort: parseInt(row[6])
+            };
+
+            try {
+              newrtk[ncs.heisigMaxNumber].sentences.push(ncs);
+            } catch (ex) {
+              console.error("Could not find number:" + ncs.heisigMaxNumber + " " + row[3]);
+            }
           });
 
-        })
-        this.sentences = coreSentences;
-      }
+
+          this.rtk.next(newrtk);
+        });
 
 
-      // special rtk with sentences
-      {
-        var organizedS: Array<RTKSentence> = []
-        var rtksen: Array<RTKSentence> = [];
-        this.rtk.forEach(row => {
-          rtksen.push({
-            kanji: row.kanji,
-            keyword: row.keyword,
-            number: row.number,
-            sentences: this.sentences.filter(c => c.heisigMaxNumber == row.number)
-          });
-
-        })
-        this.organizedSentences = rtksen;
-      }
-    })
+      });
 
 
+    this.filteredSentences = combineLatest(
+      this.rtk,
+      this.showNoSentenceKanji,
+      this.searchText.pipe(debounceTime(500)),
+      this.resultLimit
+    ).pipe(
+      map(([s, v, st, resultLimit]) => {
 
+        var res = JSON.parse(JSON.stringify(Object.values(s)));
+        if (!v) {
+          res = res.filter(c => c.sentences.length > 0);
+        }
+        if (st.length > 0) {
+          res.forEach(c => c.sentences = c.sentences.filter(b => b.sentence.indexOf(st) > -1 || b.english.indexOf(st) > -1));
+          res = res.filter(c => c.sentences.length > 0);
+        }
+        return res.slice(0, resultLimit);
+      }));
+
+    this.showNoSentenceKanji.next(false);
   }
 
   public render(input: string) {

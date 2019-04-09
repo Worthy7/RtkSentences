@@ -3,3 +3,38 @@
   font-size: 4em;
   text-align:center;
 }
+
+.english{
+  float:right;
+}
+
+#header{
+  width:100%;
+  position:fixed;
+  height:80px;
+  top:0;
+  z-index: 9;
+  margin: 5px;
+}
+
+#results{
+  margin-top: 100px;
+}
+
+mat-checkbox{
+  margin-left:10px;
+}
+
+.result-card {
+  margin: 5px;
+}
+
+#header-text{
+  display:inline;
+  margin:5px;
+}
+
+.keyword{
+  text-align:center;
+
+}
