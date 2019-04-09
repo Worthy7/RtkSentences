@@ -2,13 +2,25 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>ngRtk</title>
+  <title>ClientApp</title>
   <base href="/">
-
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 </head>
 <body>
-  <app-root>Loading...</app-root>
+  <app-root></app-root>
 </body>
 </html>
+<script src="https://www.gstatic.com/firebasejs/5.9.3/firebase.js"></script>
+<script>
+  // Initialize Firebase
+  var config = {
+    apiKey: "AIzaSyBZCe7Ds-UHNwsj5ynfUQaTqvjzAEtElc4",
+    authDomain: "rtksentences.firebaseapp.com",
+    databaseURL: "https://rtksentences.firebaseio.com",
+    projectId: "rtksentences",
+    storageBucket: "",
+    messagingSenderId: "539397927506"
+  };
+  firebase.initializeApp(config);
+</script>

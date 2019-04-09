@@ -1,0 +1,10 @@
+<h1> Welcome </h1>
+
+<div *ngFor="let row of organizedSentences">
+  <div class="kanji">{{row.kanji}}</div>
+
+  <div *ngFor="let sentence of row.sentences">
+    <div [innerHTML]="render(sentence.sentence)"></div>
+  </div>
+
+</div>
