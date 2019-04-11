@@ -1,6 +1,7 @@
 <mat-card id="header" [class.fixed]="small | async" >
   <div fxLayout.gt-md="row" fxLayout.lt-lg="column" fxLayoutAlign.gt-md="space-around start" fxLayoutAlign.lt-lg="center center">
-    <h1 id="header-text">RTK Sentences</h1>
+    <h1 id="header-text">RT10K</h1>
+    <mat-card>This is the core 10k deck, organized by max heisig number.</mat-card>
     <mat-form-field appearance="outline">
       <mat-label>Search</mat-label>
       <input matInput color="primary" type="text" (input)="searchText.next($event.target.value)" />
@@ -18,10 +19,10 @@
       <input matInput color="primary" type="text" [ngModel]="ignoreKanji | async" (input)="ignoreKanji.next($event.target.value)" />
     </mat-form-field>
 
-
-    <mat-checkbox [ngModel]="showNoSentenceKanji | async" (ngModelChange)="showNoSentenceKanji.next($event)">Show Kanji with no sentences</mat-checkbox>
-    <mat-checkbox [ngModel]="showFurigana | async" (ngModelChange)="showFurigana.next($event)">Show furigana</mat-checkbox>
-
+    <div>
+      <mat-checkbox [ngModel]="showNoSentenceKanji | async" (ngModelChange)="showNoSentenceKanji.next($event)">Show Kanji with no sentences</mat-checkbox>
+      <mat-checkbox [ngModel]="showFurigana | async" (ngModelChange)="showFurigana.next($event)">Show furigana</mat-checkbox>
+    </div>
 
   </div>
 </mat-card>
