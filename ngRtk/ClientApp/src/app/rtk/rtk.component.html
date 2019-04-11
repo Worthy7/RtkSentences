@@ -11,8 +11,17 @@
       <mat-label>Kanji Results</mat-label>
       <input matInput color="primary" type="number" [ngModel]="resultLimit | async" (input)="resultLimit.next($event.target.value)" />
     </mat-form-field>
-      <mat-checkbox [ngModel]="showNoSentenceKanji | async" (ngModelChange)="showNoSentenceKanji.next($event)">Show Kanji with no sentences</mat-checkbox>
-      <mat-checkbox [ngModel]="showFurigana | async" (ngModelChange)="showFurigana.next($event)">Show furigana</mat-checkbox>
+
+
+    <mat-form-field>
+      <mat-label>Don't group these common kanji</mat-label>
+      <input matInput color="primary" type="text" [ngModel]="ignoreKanji | async" (input)="ignoreKanji.next($event.target.value)" />
+    </mat-form-field>
+
+
+    <mat-checkbox [ngModel]="showNoSentenceKanji | async" (ngModelChange)="showNoSentenceKanji.next($event)">Show Kanji with no sentences</mat-checkbox>
+    <mat-checkbox [ngModel]="showFurigana | async" (ngModelChange)="showFurigana.next($event)">Show furigana</mat-checkbox>
+
 
   </div>
 </mat-card>
