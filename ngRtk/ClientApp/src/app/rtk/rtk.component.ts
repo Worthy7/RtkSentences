@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Subject, combineLatest, BehaviorSubject, Observable } from 'rxjs';
 import { map, debounce, debounceTime } from 'rxjs/operators';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
+import { saveAs } from 'file-saver';
 
 @Component({
   selector: 'app-rtk',
@@ -16,13 +17,15 @@ export class RtkComponent implements OnInit {
 
   rtk = new BehaviorSubject<{ [id: number]: RTKSentence }>({});
   searchText = new BehaviorSubject<string>("");
-  ignoreKanji = new BehaviorSubject<string>("彼今気来生長私間事"); // 彼女私友達男今気来生長間事食部人業
+  ignoreKanji = new BehaviorSubject<string>(""); // 彼今気来生長私間事
   small = new BehaviorSubject(false);
 
   showNoSentenceKanji = new BehaviorSubject<boolean>(false);
   showFurigana = new BehaviorSubject<boolean>(true);
-  filteredSentences: Observable<Array<RTKSentence>>;
+  filteredSentences = new BehaviorSubject<Array<RTKSentence>>([]);
+  limitedSentences = new BehaviorSubject<Array<RTKSentence>>([]);
   resultLimit = new BehaviorSubject<number>(100);
+  kanjilist$ = new BehaviorSubject<string>("common");
 
 
   ngOnInit() {
@@ -47,42 +50,31 @@ export class RtkComponent implements OnInit {
     });
 
 
-    this.filteredSentences = combineLatest(
+    combineLatest(
       getrtk,
       getsentences,
       this.showNoSentenceKanji.pipe(debounceTime(1000)),
       this.searchText.pipe(debounceTime(1000)),
-      this.resultLimit.pipe(debounceTime(1000)),
-      this.showFurigana,
-      this.ignoreKanji.pipe(debounceTime(1000))
+      this.ignoreKanji.pipe(debounceTime(1000)),
+      this.kanjilist$
     ).pipe(
-      map(([rtkdata, sentenceData, v, searchtext, resultLimit, showFurigana, ignorekanji]
-      : [string, string, boolean, string, number, boolean, string]) => {
+      map(([rtkdata, sentenceData, v, searchtext, ignorekanji, source]
+        : [string, string, boolean, string, string, string]) => {
 
-        // read rtk
-        {
-          console.log(rtkdata);
-
-          var rows = rtkdata.split("\n");
-          var rtk: { [id: number]: RTKSentence } = {}
-
-          rows.forEach(srow => {
-            var row = srow.split("\t");
-            var n = <RTKSentence>{
-              kanji: row[0],
-              keyword: row[1],
-              number: parseInt(row[2]),
-              sentences: []
-            };
-
-
-            // exclude if in the mix
-            if ((ignorekanji).indexOf(n.kanji) == -1) {
-              rtk[n.number] = n;
-            }
-
-          })
+        var rtk: { [id: number]: RTKSentence } = {}
+        // read rtk if rtk
+        if (source == "rtk") {
+          rtk = this.getKanjiListFromRTK(rtkdata);
+        } else {
+          rtk = this.getKanjiListFromSentences(sentenceData);
         }
+
+        // exclude if in the mix
+        ignorekanji.split("").forEach(k => {
+          Object.keys(rtk).forEach(c => {
+            if (rtk[parseInt(c)].kanji == k) delete rtk[parseInt(c)];
+          });
+        });
 
 
         // read sentences
@@ -111,6 +103,20 @@ export class RtkComponent implements OnInit {
 
         }
 
+        // sort the sentences
+        Object.values(rtk).forEach(c => c.sentences.sort((a, b) => {
+          // this is advanced because it needs to subsort too.
+
+          var tries = 0;
+          var res = this.findMaxNumber(a.sentence, rtk, tries) - this.findMaxNumber(b.sentence, rtk, tries)
+          while (res == 0 && tries < 5) {
+            tries++;
+            res = this.findMaxNumber(a.sentence, rtk, tries) - this.findMaxNumber(b.sentence, rtk, tries)
+          }
+          return res;
+        }
+        ));
+
 
         searchtext = searchtext.toLowerCase();
         var res: Array<RTKSentence> = JSON.parse(JSON.stringify(Object.values(rtk)));
@@ -124,31 +130,96 @@ export class RtkComponent implements OnInit {
           res = res.filter(c => c.sentences.length > 0);
         }
 
-      /// debug
-      var sorted: Array<RTKSentence> = JSON.parse(JSON.stringify(Object.values(rtk)))
-      sorted.sort((a, b) => b.sentences.length - a.sentences.length);
-      /////////////////
-      
-      console.log("The kanji with the most sentences is:" + sorted[0].kanji +" " + sorted[0].sentences.length);
-        res = res.slice(0, resultLimit);
-        res.forEach(r => r.sentences.forEach(s => s.htmlsentence = this.render(s.sentence, showFurigana)));
+        /// debug
+        var sorted: Array<RTKSentence> = JSON.parse(JSON.stringify(Object.values(rtk)))
+        sorted.sort((a, b) => b.sentences.length - a.sentences.length);
+        /////////////////
+
+        console.log("The kanji with the most sentences is:" + sorted[0].kanji + " " + sorted[0].sentences.length);
         return res;
-      }));
+      })).subscribe(this.filteredSentences);
 
     this.showNoSentenceKanji.next(false);
 
+    combineLatest(
+      this.resultLimit.pipe(debounceTime(1000)), this.filteredSentences, this.showFurigana).pipe(map(([rl, fs, showFurigana]: [number, RTKSentence[], boolean]) => {
+        var nres = fs.slice(0, rl);
+        nres.forEach(r => r.sentences.forEach(s => s.htmlsentence = this.render(s.sentence, showFurigana)));
+        return nres;
+      })).subscribe(this.limitedSentences);
+
+
   }
 
-  public findMaxNumber(sentence: string, rtk: { [id: number]: RTKSentence }): number {
+
+  public getKanjiListFromRTK(rtkdata: string): { [id: number]: RTKSentence } {
+    console.log("Loading rtk...");
+    var rtk: { [id: number]: RTKSentence } = {};
+    var rows = rtkdata.split("\n");
+
+    rows.forEach(srow => {
+      var row = srow.split("\t");
+      var n = <RTKSentence>{
+        kanji: row[0],
+        keyword: row[1],
+        number: parseInt(row[2]),
+        sentences: []
+      };
+    })
+    return rtk;
+  }
+
+
+  public getKanjiListFromSentences(sentenceData: string): { [id: number]: RTKSentence } {
+    console.log("Loading rtk...");
+    var rtk: { [id: number]: RTKSentence } = {};
+    // look through all the sentences /////////////
+    var sebrows = sentenceData.split("\n");
+    // for some reason the last sentence is broken.
+    sebrows.pop();
+
+    var kanjiobj = {};
+    sebrows.forEach(srow => {
+      var row = srow.split("\t");
+      row[1].split("").forEach(c => {
+        if (kanjiobj[c]) kanjiobj[c]++;
+        else kanjiobj[c] = 1;
+      })
+
+    })
+
+    var kanjikeys = Object.keys(kanjiobj)
+    kanjikeys.sort((a, b) => kanjiobj[b] - kanjiobj[a]);
+
+    kanjikeys.forEach((v, i, s) => {
+      rtk[i] = <RTKSentence>{
+        kanji: v,
+        keyword: "",
+        number: i,
+        sentences: []
+      };
+    });
+
+
+    return rtk;
+  }
+
+
+  public findMaxNumber(sentence: string, rtk: { [id: number]: RTKSentence }, max = 0): number {
 
     var keys = Object.keys(rtk).reverse();
     var res = 0;
+    var resnum = 0;
     keys.some((v, i, a) => {
       var ind = parseInt(v);
       if (sentence.indexOf(rtk[ind].kanji) > -1) // contains it
       {
-        res = ind;
-        return true;
+        if (resnum >= max) {
+          res = ind;
+          return true;
+        } else {
+          resnum++;
+        }
       } else {
         return false;
       }
@@ -169,10 +240,52 @@ export class RtkComponent implements OnInit {
 
   }
 
+  public export() {
+
+    // output format should be:
+    /////////////////
+    // coreindex
+    // sentence
+    // translation
+    // heisigMaxNumber
+    // HeisigMaxKanji
+    // HeisigMaxKeyword
+    // HeisigSort
+
+    var forexport: exportrow[] = [];
+
+    this.filteredSentences.value.forEach(rtk => {
+      rtk.sentences.forEach(sentence =>
+        forexport.push(<exportrow>{
+          acoreIndex: sentence.coreIndex,
+          bsentence: sentence.sentence,
+          cenglish: sentence.english,
+          dheisigMaxNumber: rtk.number,
+          eheisigMaxKanji: rtk.kanji,
+          fheisigMaxKeyword: rtk.keyword,
+        })
+      );
+    })
+
+    // add index
+    forexport.forEach((v, i, a) => v.gheisigSort = i);
+
+    var stringed = forexport.map(v => Object.values(v).join("\t")).join("\n");
+    var blob = new Blob([stringed], { type: 'text/tsv' })
+    saveAs(blob, "rt10k.tsv");
+  }
 
 }
 
-
+export class exportrow {
+  acoreIndex: number;
+  bsentence: string;
+  cenglish: string;
+  dheisigMaxNumber: number;
+  eheisigMaxKanji: string;
+  fheisigMaxKeyword: string;
+  gheisigSort: number;
+}
 
 export class RTK {
   kanji: string;

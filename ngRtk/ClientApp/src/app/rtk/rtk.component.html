@@ -1,7 +1,16 @@
 <mat-card id="header" [class.fixed]="small | async" >
   <div fxLayout.gt-md="row" fxLayout.lt-lg="column" fxLayoutAlign.gt-md="space-around start" fxLayoutAlign.lt-lg="center center">
-    <h1 id="header-text">RT10K</h1>
-    <mat-card>This is the core 10k deck, organized by max heisig number.</mat-card>
+
+    <h1 id="header-text">10K勉強</h1>
+
+    <mat-card>This is the core 10k deck, organized by kanji</mat-card>
+
+    <mat-radio-group aria-label="Select an option" [ngModel]="kanjilist$ | async" (change)="kanjilist$.next($event)">
+      <mat-radio-button value="rtk">RTK</mat-radio-button>
+      <mat-radio-button value="common">Common</mat-radio-button>
+    </mat-radio-group>
+
+
     <mat-form-field appearance="outline">
       <mat-label>Search</mat-label>
       <input matInput color="primary" type="text" (input)="searchText.next($event.target.value)" />
@@ -14,7 +23,7 @@
     </mat-form-field>
 
 
-    <mat-form-field>
+    <mat-form-field appearance="outline">
       <mat-label>Don't group these common kanji</mat-label>
       <input matInput color="primary" type="text" [ngModel]="ignoreKanji | async" (input)="ignoreKanji.next($event.target.value)" />
     </mat-form-field>
@@ -24,11 +33,15 @@
       <mat-checkbox [ngModel]="showFurigana | async" (ngModelChange)="showFurigana.next($event)">Show furigana</mat-checkbox>
     </div>
 
+    <div>
+      <button mat-button color="primary" type="button" (click)="export()">Export</button>
+    </div>
+
   </div>
 </mat-card>
 
 <div id="results">
-  <div *ngFor="let row of (filteredSentences | async)">
+  <div *ngFor="let row of (limitedSentences | async)">
     <mat-card class="result-card">
       <div class="keyword"><small>{{row.number}} - {{row.keyword}}</small></div>
       <div class="kanji" [id]="row.kanji">{{row.kanji}}</div>
